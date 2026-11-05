@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Case interativo do projeto Ticket Movie, da ideia ao plano de produção, para a vaga de AI Builder do iFood.">
+<style>:root{color-scheme:light}body{margin:0;font-family:system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Case Ticket Movie</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Layout: ingresso de cinema como fio condutor. Hero em formato de ticket, seções em sequência
+   (ideia → pesquisa → pessoas → protótipo → produção), cada uma com um elemento interativo. */
+:root{
+  --bg:#f1f3f8; --surface:#ffffff; --surface2:#e8ebf3; --line:#d3d8e6;
+  --fg:#12141f; --muted:#555c75;
+  --accent:#b8e62e; --accent-ink:#13160a; --accent-text:#456b00;
+  --warm:#b3262c; --good:#1f7a4a; --bad:#b3262c; --warn:#8a5a00;
+  --glow:rgba(179,38,44,.10);
+  --f-display:'Big Shoulders Display','Arial Narrow',Impact,sans-serif;
+  --f-body:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c0e16; --surface:#141827; --surface2:#1c2133; --line:#2a3048;
+  --fg:#eceef7; --muted:#9aa1ba;
+  --accent-text:#b8e62e; --warm:#e0454c; --good:#5fd38d; --bad:#ff7077; --warn:#f0b64a;
+  --glow:rgba(179,38,44,.28); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c0e16; --surface:#141827; --surface2:#1c2133; --line:#2a3048;
+  --fg:#eceef7; --muted:#9aa1ba;
+  --accent-text:#b8e62e; --warm:#e0454c; --good:#5fd38d; --bad:#ff7077; --warn:#f0b64a;
+  --glow:rgba(179,38,44,.28); color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.55;
+  padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.wrap{max-width:1040px;margin:0 auto}
+h1,h2,h3{margin:0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:800;text-transform:uppercase;font-size:clamp(2rem,5vw,3.1rem);line-height:.98;letter-spacing:.01em}
+h3{font-size:1.05rem;font-weight:650}
+p{margin:0}
+a{color:var(--accent-text)}
+:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px;border-radius:4px}
+button{font:inherit;color:inherit;cursor:pointer}
+.mono{font-family:var(--f-mono)}
+.eyebrow{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.tag{display:inline-flex;align-items:center;gap:.4em;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;padding:.25em .65em;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.tag.done{color:var(--good);border-color:currentColor}
+.tag.plan{color:var(--warn);border-color:currentColor}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px))}
+.nav-in{max-width:1040px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
+.nav-in::-webkit-scrollbar{display:none}
+.nav a{white-space:nowrap;text-decoration:none;color:var(--muted);font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;padding:.55em .9em;border-radius:999px;border:1px solid transparent}
+.nav a:hover{color:var(--fg)}
+.nav a.on{color:var(--accent-ink);background:var(--accent)}
+.theme{margin-left:auto;flex:none;background:none;border:1px solid var(--line);border-radius:999px;font-family:var(--f-mono);font-size:.72rem;padding:.4em .8em;color:var(--muted)}
+
+/* hero */
+.hero{position:relative;padding-block:40px 24px}
+.hero::before{content:"";position:absolute;inset:-60px 0 auto 0;height:420px;background:radial-gradient(60% 80% at 20% 0%,var(--glow),transparent 70%);pointer-events:none}
+.hero-grid{position:relative;display:grid;gap:28px;grid-template-columns:1.1fr .9fr;align-items:center}
+.hero h1{font-family:var(--f-display);font-weight:900;text-transform:uppercase;font-size:clamp(3rem,9vw,6.2rem);line-height:.9;letter-spacing:.005em}
+.hero h1 em{font-style:normal;color:var(--accent-text)}
+.lede{font-size:1.1rem;color:var(--muted);max-width:52ch;margin-top:18px}
+.lede b{color:var(--fg);font-weight:600}
+.ticket{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:grid;grid-template-columns:1fr 92px;min-width:0}
+.ticket::before,.ticket::after{content:"";position:absolute;right:80px;width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px solid var(--line)}
+.ticket::before{top:-12px;clip-path:inset(50% 0 0 0)}
+.ticket::after{bottom:-12px;clip-path:inset(0 0 50% 0)}
+.t-main{padding:20px 22px;min-width:0}
+.t-stub{border-left:2px dashed var(--line);padding:16px 8px;display:flex;align-items:center;justify-content:center}
+.t-stub span{writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--f-mono);font-size:.72rem;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;white-space:nowrap}
+.t-title{font-family:var(--f-display);font-weight:800;font-size:1.9rem;text-transform:uppercase;line-height:1;margin:6px 0 14px}
+.t-fields{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 16px}
+.t-fields dt{font-family:var(--f-mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.t-fields dd{margin:0;font-weight:600;font-size:.95rem}
+.t-fields .hl{color:var(--accent-text)}
+
+/* sections */
+section.sec{padding-block:72px 8px;border-top:1px solid var(--line);margin-top:56px}
+.sec-head{display:grid;gap:12px;margin-bottom:28px;max-width:720px}
+.sec-head p{color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;min-width:0}
+.grid2{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid3{display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.btn{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:.6em 1em;font-weight:600;font-size:.9rem}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chip{background:transparent;border:1px solid var(--line);border-radius:999px;padding:.4em .9em;font-size:.85rem;color:var(--muted)}
+.chip[aria-pressed="true"],.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.note{font-size:.82rem;color:var(--muted)}
+
+/* ideia */
+.calc{display:grid;gap:22px;grid-template-columns:1fr 1fr}
+.field{display:grid;gap:6px}
+.field label{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.field output{font-family:var(--f-mono);font-weight:700}
+input[type=range]{width:100%;accent-color:var(--accent-text)}
+input[type=number],select{background:var(--surface2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:.5em .7em;font:inherit;width:100%}
+.bars{display:grid;gap:14px}
+.bar{display:grid;gap:4px}
+.bar-top{display:flex;justify-content:space-between;gap:8px;font-size:.9rem}
+.bar-track{height:14px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .35s}
+.verdict{font-weight:650;margin-top:6px}
+.pillars{display:grid;gap:14px;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:24px}
+.pillars .card h3{margin-bottom:6px}
+.pillars .card p{color:var(--muted);font-size:.92rem}
+
+/* pesquisa */
+.sites{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));margin-top:18px}
+.site{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;align-content:start;min-width:0}
+.site h3{font-family:var(--f-display);text-transform:uppercase;font-size:1.5rem;font-weight:800;letter-spacing:.02em}
+.f{display:grid;grid-template-columns:20px 1fr;gap:8px;font-size:.86rem;line-height:1.4;padding:6px 8px;border-radius:8px;border:1px solid transparent;transition:opacity .2s}
+.f i{font-style:normal;font-family:var(--f-mono);font-weight:700}
+.f.p i{color:var(--good)} .f.n i{color:var(--bad)}
+.sites.filtering .f{opacity:.28}
+.sites.filtering .f.hit{opacity:1;border-color:var(--line);background:var(--surface2)}
+.decision{margin-top:18px;border-left:3px solid var(--accent);padding:12px 16px;background:var(--surface);border-radius:0 10px 10px 0}
+.stats{display:flex;flex-wrap:wrap;gap:12px 28px;margin-top:22px;color:var(--muted);font-size:.9rem}
+.stats b{font-family:var(--f-display);font-size:2rem;color:var(--fg);margin-right:6px;font-weight:800}
+
+/* pessoas */
+.people{display:grid;gap:18px;grid-template-columns:230px 1fr}
+.plist{display:grid;gap:6px;align-content:start}
+.plist button{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid}
+.plist button small{color:var(--muted);font-size:.78rem}
+.plist button[aria-selected="true"]{border-color:var(--accent-text);background:var(--surface2)}
+.plist .anti{border-style:dashed}
+.pdetail{display:grid;gap:14px;align-content:start}
+.pdetail dl{display:grid;gap:10px;margin:0}
+.pdetail dt{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.pdetail dd{margin:2px 0 0}
+.resp{background:var(--surface2);border-radius:10px;padding:14px}
+.resp b{color:var(--accent-text)}
+
+/* protótipo */
+.proto-wrap{display:grid;gap:22px;grid-template-columns:minmax(0,380px) 1fr;align-items:start}
+.phone{background:var(--surface);border:1px solid var(--line);border-radius:26px;overflow:hidden;min-width:0;box-shadow:0 18px 50px -24px #000}
+.p-top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
+.p-logo{font-family:var(--f-display);font-weight:900;text-transform:uppercase;font-size:1.25rem;letter-spacing:.04em}
+.p-logo b{color:var(--accent-text)}
+.p-steps{display:flex;gap:4px;padding:10px 16px 0}
+.p-steps span{flex:1;height:4px;border-radius:2px;background:var(--surface2)}
+.p-steps span.on{background:var(--accent-text)}
+.p-body{padding:16px;display:grid;gap:14px;min-height:460px;align-content:start}
+.p-body h3{font-size:1rem}
+.films{display:grid;gap:8px}
+.film{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.film[aria-pressed="true"]{border-color:var(--accent-text)}
+.rate{font-family:var(--f-mono);font-weight:700;font-size:.78rem;min-width:30px;text-align:center;padding:.2em .4em;border-radius:4px;color:#fff}
+.r-L{background:#1f8a4c}.r-12{background:#b8860b}.r-16{background:#c0501a}.r-18{background:#b3262c}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.qty{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface2);border-radius:10px;padding:8px 12px}
+.qty .ctr{display:flex;align-items:center;gap:10px}
+.qty .ctr button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface)}
+.warn{background:var(--surface2);border-left:3px solid var(--warn);padding:10px 12px;border-radius:0 8px 8px 0;font-size:.86rem}
+.warn.bad{border-color:var(--bad)}
+.warn.ok{border-color:var(--good)}
+.screen{height:6px;border-radius:50%/100%;background:var(--accent-text);opacity:.55;margin:4px 12% 0}
+.seats{display:grid;gap:5px;justify-content:center}
+.srow{display:flex;gap:5px;align-items:center;justify-content:center}
+.srow .lbl{width:14px;font-family:var(--f-mono);font-size:.65rem;color:var(--muted);text-align:center}
+.seat{width:24px;height:24px;border-radius:6px 6px 3px 3px;border:1px solid var(--line);background:var(--surface2);padding:0;font-size:.6rem;font-family:var(--f-mono);color:var(--muted)}
+.seat.pcd{border-color:#3a7bd5;color:#3a7bd5}
+.seat.busy{background:var(--line);opacity:.45;cursor:not-allowed}
+.seat.sel{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.seat.gap{visibility:hidden}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.72rem;color:var(--muted);justify-content:center}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid var(--line);vertical-align:-2px;margin-right:4px}
+.sum{display:grid;gap:6px;font-size:.9rem}
+.sum div{display:flex;justify-content:space-between;gap:10px}
+.sum .tot{border-top:1px dashed var(--line);padding-top:8px;font-weight:700;font-size:1.05rem}
+.stub{border:2px dashed var(--accent-text);border-radius:12px;padding:14px;display:grid;gap:4px;text-align:center}
+.stub .code{font-family:var(--f-mono);font-size:1.4rem;font-weight:700;letter-spacing:.14em;color:var(--accent-text)}
+.p-foot{display:flex;justify-content:space-between;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.checks{display:grid;gap:8px}
+.checks li{list-style:none;display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:.9rem;color:var(--muted)}
+.checks{padding:0;margin:0}
+.checks li.ok{color:var(--fg)}
+.checks li i{font-style:normal;font-family:var(--f-mono);color:var(--muted)}
+.checks li.ok i{color:var(--good)}
+
+/* testes */
+.tests{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:22px}
+.buyers{display:grid;gap:8px;margin:12px 0}
+.buyer{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;font-size:.85rem;padding:8px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--line)}
+.buyer .st{font-family:var(--f-mono);font-size:.72rem}
+.buyer.win{border-color:var(--good)}.buyer.win .st{color:var(--good)}
+.buyer.lose{border-color:var(--bad)}.buyer.lose .st{color:var(--bad)}
+.minirow{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:6px}
+.minirow span{height:16px;border-radius:3px;background:var(--surface2);border:1px solid var(--line)}
+.minirow span.taken{background:var(--good);border-color:var(--good)}
+.roles{margin-top:22px}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--surface2);font-family:var(--f-mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}
+.scroll-x{overflow-x:auto}
+
+/* produção */
+.pipe{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.pipe button{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:left;display:grid;gap:6px;min-width:0}
+.pipe button .n{font-family:var(--f-mono);font-size:.68rem;color:var(--muted)}
+.pipe button b{font-size:.9rem;line-height:1.15}
+.pipe button[aria-selected="true"]{border-color:var(--accent-text);background:var(--surface2)}
+.pipe .dot{height:4px;border-radius:2px;background:var(--line)}
+.pipe .dot.done{background:var(--good)}.pipe .dot.plan{background:var(--warn)}
+.stage{margin-top:14px;display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.stage h3{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:500}
+.stage .card p{font-size:.95rem}
+.profile{display:grid;gap:14px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:22px}
+.profile .card{display:grid;gap:8px}
+.profile .ev{display:flex;gap:6px;flex-wrap:wrap}
+.profile .ev a{font-family:var(--f-mono);font-size:.72rem;padding:.2em .6em;border:1px solid var(--line);border-radius:999px;color:var(--muted);text-decoration:none}
+.profile .ev a:hover{color:var(--fg);border-color:var(--muted)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem;display:grid;gap:6px}
+
+@media (max-width:820px){
+  .hero-grid,.calc,.people,.proto-wrap,.tests,.profile{grid-template-columns:minmax(0,1fr)}
+  .grid3,.pillars,.stage{grid-template-columns:minmax(0,1fr)}
+  .pipe{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+  .plist{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:420px){.pipe{grid-template-columns:repeat(2,minmax(0,1fr))}.plist{grid-template-columns:minmax(0,1fr)}.ticket{grid-template-columns:1fr 64px}.ticket::before,.ticket::after{right:52px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<nav class="nav" aria-label="Etapas do case"><div class="nav-in">
+  <a href="#topo" class="on">Início</a><a href="#ideia">Ideia</a><a href="#pesquisa">Pesquisa</a><a href="#pessoas">Pessoas</a><a href="#prototipo">Protótipo</a><a href="#producao">Produção</a>
+  <button class="theme" id="themeBtn" type="button" aria-label="Alternar tema">tema</button>
+</div></nav>
+
+<header class="hero" id="topo">
+  <div class="hero-grid">
+    <div>
+      <p class="eyebrow">Case para iFood · AI Builder</p>
+      <h1 style="margin-top:12px">Da ideia<br>até <em>o ar</em></h1>
+      <p class="lede">Um projeto só, contado do primeiro rascunho ao plano de produção: <b>Ticket Movie</b>, uma compra de ingressos de cinema que nasceu de uma análise de sete sites e de cinco personas. Cada etapa abaixo tem algo para clicar.</p>
+    </div>
+    <div class="ticket" aria-label="Ingresso do case">
+      <div class="t-main">
+        <span class="eyebrow">Admit one · Projeto IHC</span>
+        <div class="t-title">Ticket Movie</div>
+        <dl class="t-fields">
+          <div><dt>Equipe</dt><dd>Hugo, Maria Laura e Miguel</dd></div>
+          <div><dt>Disciplina</dt><dd>Interação Humano-Computador</dd></div>
+          <div><dt>Sala</dt><dd class="hl">Ideia → Produção</dd></div>
+          <div><dt>Poltrona</dt><dd>Plano Família</dd></div>
+        </dl>
+      </div>
+      <div class="t-stub"><span>Nº 0001 · AI Builder</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- IDEIA -->
+<section class="sec" id="ideia">
+  <div class="sec-head">
+    <p class="eyebrow">Etapa 1 · Concepção <span class="tag done" style="margin-left:8px">feito no projeto</span></p>
+    <h2>Vender assinatura, não só ingresso</h2>
+    <p>A ideia saiu de uma observação: streaming transformou consumo em assinatura, e cinema ainda vende sessão por sessão. Propusemos o <b>Plano Família</b>, uma mensalidade com ingressos e combos incluídos, mais refil de copo para reduzir plástico descartável.</p>
+  </div>
+  <div class="card">
+    <div class="calc">
+      <div style="display:grid;gap:16px;align-content:start">
+        <p class="eyebrow">Teste a hipótese · valores de exemplo, editáveis</p>
+        <div class="field"><label for="cSess">Idas ao cinema por mês <output id="oSess">3</output></label><input id="cSess" type="range" min="1" max="8" value="3"></div>
+        <div class="field"><label for="cPpl">Pessoas por ida <output id="oPpl">2</output></label><input id="cPpl" type="range" min="1" max="4" value="2"></div>
+        <div class="grid2">
+          <div class="field"><label for="cPrice">Ingresso avulso (R$)</label><input id="cPrice" type="number" min="1" value="32"></div>
+          <div class="field"><label for="cPlan">Mensalidade (R$)</label><input id="cPlan" type="number" min="1" value="90"></div>
+        </div>
+        <p class="note">Premissa do exemplo: a mensalidade inclui 4 ingressos; os extras saem com 30% de desconto.</p>
+      </div>
+      <div class="bars" aria-live="polite">
+        <div class="bar"><div class="bar-top"><span>Avulso</span><b class="mono" id="vA">–</b></div><div class="bar-track"><div class="bar-fill" id="bA" style="background:var(--muted)"></div></div></div>
+        <div class="bar"><div class="bar-top"><span>Plano Família</span><b class="mono" id="vP">–</b></div><div class="bar-track"><div class="bar-fill" id="bP" style="background:var(--accent-text)"></div></div></div>
+        <p class="verdict" id="verdict"></p>
+      </div>
+    </div>
+  </div>
+  <div class="pillars">
+    <div class="card"><h3>Frequentador assíduo</h3><p>Desconto sobre o ingresso avulso e acesso antecipado a sessões especiais.</p></div>
+    <div class="card"><h3>Combos incluídos</h3><p>Planos com tipos diferentes de combo, como nos serviços de streaming.</p></div>
+    <div class="card"><h3>Copo com refil</h3><p>Copo personalizado vendido na loja e reabastecido nas sessões seguintes, com custo menor que um copo novo.</p></div>
+  </div>
+</section>
+
+<!-- PESQUISA -->
+<section class="sec" id="pesquisa">
+  <div class="sec-head">
+    <p class="eyebrow">Etapa 2 · Descoberta <span class="tag done" style="margin-left:8px">feito no projeto</span></p>
+    <h2>Sete sites, uma lista de decisões</h2>
+    <p>Navegamos CineX, Cinemark, Cineflix, Kinoplex, Cinépolis, Arcoplex e Multicine, do banner inicial até o pagamento. Escolha um tema para ver onde ele aparece e qual decisão de produto saiu dele.</p>
+  </div>
+  <div class="row" id="themes" role="group" aria-label="Filtrar por tema"></div>
+  <div class="decision" id="decision" aria-live="polite"></div>
+  <div class="sites" id="sites"></div>
+  <div class="stats">
+    <span><b>1</b>de 7 sites com recurso de acessibilidade (Cinemark)</span>
+    <span><b>2</b>sem escolha de poltrona (Arcoplex, Multicine)</span>
+    <span><b>todos</b>levam a compra para outra página ou etapa externa, segundo a análise do grupo</span>
+  </div>
+</section>
+
+<!-- PESSOAS -->
+<section class="sec" id="pessoas">
+  <div class="sec-head">
+    <p class="eyebrow">Etapa 3 · Definição <span class="tag done" style="margin-left:8px">feito no projeto</span></p>
+    <h2>Quem compra, quem administra, quem fica de fora</h2>
+    <p>Cinco personas e duas anti-personas orientaram o escopo. A resposta de produto em cada uma é a decisão que tomamos a partir do perfil.</p>
+  </div>
+  <div class="people">
+    <div class="plist" id="plist" role="tablist" aria-label="Personas"></div>
+    <div class="card pdetail" id="pdetail" role="tabpanel" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- PROTÓTIPO -->
+<section class="sec" id="prototipo">
+  <div class="sec-head">
+    <p class="eyebrow">Etapa 4 · Construção e teste <span class="tag done" style="margin-left:8px">protótipo em papel feito</span> <span class="tag plan">versão clicável feita para este case</span></p>
+    <h2>A compra, do jeito que a pesquisa pediu</h2>
+    <p>O protótipo do grupo foi desenhado em papel. Esta versão clicável aplica as decisões da pesquisa: tudo na mesma página, dublado ou legendado e inteira ou meia obrigatórios, poltrona sempre escolhida, combo e refil na mesma compra, bloqueio por idade.</p>
+  </div>
+  <div class="proto-wrap">
+    <div class="phone" aria-label="Protótipo clicável">
+      <div class="p-top"><span class="p-logo">Ticket<b>Movie</b></span><span class="note mono" id="pStepLbl"></span></div>
+      <div class="p-steps" id="pSteps"></div>
+      <div class="p-body" id="pBody"></div>
+      <div class="p-foot"><button class="btn" id="pBack" type="button">Voltar</button><button class="btn pri" id="pNext" type="button">Continuar</button></div>
+    </div>
+    <div style="display:grid;gap:16px;min-width:0">
+      <div class="card">
+        <h3>O que a pesquisa pediu, e se o protótipo cumpre</h3>
+        <ul class="checks" id="checks" style="margin-top:12px"></ul>
+        <p class="note" style="margin-top:12px">Filmes, horários, preços e mapa de sala são dados de exemplo.</p>
+      </div>
+      <div class="card">
+        <h3>Teste de aceitação: idade do comprador</h3>
+        <p class="note" style="margin:6px 0 10px">Cenário da Valentina, 12 anos. Troque a idade e tente comprar.</p>
+        <div class="field"><label for="age">Idade de quem compra</label>
+          <select id="age"><option value="12">12 anos</option><option value="17">17 anos</option><option value="27" selected>27 anos</option></select></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tests">
+    <div class="card">
+      <p class="eyebrow">Cenário do João · administrador</p>
+      <h3 style="margin-top:6px">Quatro compradores, uma sala inteira</h3>
+      <p class="note" style="margin-top:6px">No cenário original, João compra todos os assentos de uma sala por um computador e tenta de novo por outro. O sistema precisa recusar a segunda compra. Aqui, quatro compradores disputam os mesmos 12 assentos.</p>
+      <div class="buyers" id="buyers"></div>
+      <div class="minirow" id="room"></div>
+      <div class="row" style="margin-top:12px"><button class="btn pri" id="runRace" type="button">Rodar teste</button><span class="note" id="raceOut"></span></div>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Papéis e objetivos</p>
+      <h3 style="margin-top:6px">O que cada papel faz em cada área</h3>
+      <div class="row" style="margin:10px 0" role="group" aria-label="Papel">
+        <button class="chip" data-role="Cliente" aria-pressed="true" type="button">Cliente</button>
+        <button class="chip" data-role="Desenvolvedor" aria-pressed="false" type="button">Desenvolvedor</button>
+      </div>
+      <div class="scroll-x"><table><thead><tr><th>Filmes</th><th>Planos</th><th>Compras</th></tr></thead><tbody id="roleBody"></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUÇÃO -->
+<section class="sec" id="producao">
+  <div class="sec-head">
+    <p class="eyebrow">Etapa 5 · Entrega <span class="tag plan">plano, ainda não executado</span></p>
+    <h2>Como eu levaria isso ao ar</h2>
+    <p>O projeto de faculdade termina no protótipo. Esta etapa mostra como cada peça já produzida vira entrada do próximo passo, e onde a IA entra no ciclo. As marcas verdes são o que existe; as amarelas são o plano.</p>
+  </div>
+  <div class="pipe" id="pipe" role="tablist" aria-label="Etapas do ciclo"></div>
+  <div class="stage" id="stage" role="tabpanel" aria-live="polite"></div>
+
+  <div class="sec-head" style="margin-top:56px">
+    <p class="eyebrow">Perfil</p>
+    <h2>Da ideia à produção, em evidências</h2>
+    <p>O perfil que a vaga pede, ligado ao que está nas etapas acima.</p>
+  </div>
+  <div class="profile">
+    <div class="card"><h3>Começa pela dor, não pela tela</h3><p class="note">Sete sites analisados, achados agrupados em temas e cada tema convertido em decisão.</p><div class="ev"><a href="#pesquisa">Pesquisa</a><a href="#ideia">Ideia</a></div></div>
+    <div class="card"><h3>Pensa em quem usa e em quem opera</h3><p class="note">Personas de cliente e de administrador, mais anti-personas para marcar o que fica fora do escopo.</p><div class="ev"><a href="#pessoas">Pessoas</a></div></div>
+    <div class="card"><h3>Transforma cenário em teste</h3><p class="note">Os cenários de João e Valentina viram casos de aceitação que rodam no protótipo.</p><div class="ev"><a href="#prototipo">Protótipo</a></div></div>
+    <div class="card"><h3>Sabe onde a IA entra</h3><p class="note">Construção assistida, avaliação automática a partir dos cenários e um agente que recomenda sessão, assento e combo.</p><div class="ev"><a href="#producao">Produção</a></div></div>
+  </div>
+  <p class="note" style="margin-top:22px">Contexto da vaga: segundo a <a href="https://www.meioemensagem.com.br/proxxima/como-o-ifood-adota-ia-de-forma-sistemica" target="_blank" rel="noopener">Meio &amp; Mensagem</a>, o iFood tem como meta que cada funcionário crie o próprio agente de IA e usa IA para recomendar pratos e reduzir o paradoxo da escolha.</p>
+</section>
+
+<footer>
+  <span>Ticket Movie foi um trabalho em grupo de Hugo, Maria Laura e Miguel. Fontes: análise de sites, documento de personas e apresentação do projeto.</span>
+  <span>Preços, filmes e horários neste case são exemplos. Nada aqui está em produção.</span>
+</footer>
+</div>
+
+<script>
+(function(){
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var brl=function(n){return 'R$ '+n.toFixed(2).replace('.',',')};
+
+/* tema */
+try{var t=localStorage.getItem('tm-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}
+$('#themeBtn').addEventListener('click',function(){
+  var cur=document.documentElement.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+  var nx=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',nx);
+  try{localStorage.setItem('tm-theme',nx)}catch(e){}
+});
+
+/* nav ativa */
+var links=$$('.nav a');
+var secs=['topo','ideia','pesquisa','pessoas','prototipo','producao'].map(function(id){return document.getElementById(id)});
+function setNav(){var y=window.scrollY+120,cur=0;secs.forEach(function(s,i){if(s.offsetTop<=y)cur=i});links.forEach(function(a,i){a.classList.toggle('on',i===cur)})}
+window.addEventListener('scroll',setNav,{passive:true});setNav();
+
+/* ideia: calculadora */
+function calc(){
+  var s=+$('#cSess').value,p=+$('#cPpl').value,pr=Math.max(0,+$('#cPrice').value||0),pl=Math.max(0,+$('#cPlan').value||0);
+  $('#oSess').textContent=s;$('#oPpl').textContent=p;
+  var t=s*p,a=t*pr,b=pl+Math.max(0,t-4)*pr*0.7,mx=Math.max(a,b,1);
+  $('#vA').textContent=brl(a);$('#vP').textContent=brl(b);
+  $('#bA').style.width=(a/mx*100)+'%';$('#bP').style.width=(b/mx*100)+'%';
+  var d=a-b;
+  $('#verdict').textContent=t+' ingressos por mês. '+(d>0?'O plano economiza '+brl(d)+' por mês.':d<0?'Neste uso o avulso sai '+brl(-d)+' mais barato; o plano não compensa.':'Os dois custam o mesmo.');
+}
+['#cSess','#cPpl','#cPrice','#cPlan'].forEach(function(s){$(s).addEventListener('input',calc)});calc();
+
+/* pesquisa */
+var THEMES={
+ org:['Organização','Uma seção para cada estado do filme (pré-venda, estreia, em cartaz) e nenhum menu duplicado.'],
+ ads:['Anúncios','Topo e banner só para filmes; sem pop-ups. Publicidade fora do caminho de compra.'],
+ seat:['Poltrona','Escolha de poltrona em toda sessão, com assentos preferenciais e adaptados em destaque.'],
+ a11y:['Acessibilidade','Acessibilidade como requisito: legenda descritiva, audiodescrição e assentos adaptados filtráveis (persona Marcos).'],
+ combo:['Combo','Combo e refil de copo vendidos na mesma compra do ingresso, com apresentação simples.'],
+ flow:['Fluxo de compra','Compra inteira no próprio site, em poucas telas, escolhendo primeiro o cinema e depois a sessão.'],
+ price:['Preço','Tabela de preços e promoções visível antes da escolha da sessão (persona Ana).']
+};
+var SITES=[
+ ['CineX',[['n','org','Pré-lançamento, estreia e em cartaz misturados no banner'],['n','org','Layout com informações soltas; trailer ocupa todo o topo'],['p','combo','Combo comprado junto com o ingresso']]],
+ ['Cinemark',[['p','a11y','Leitura do site e Libras para acessibilidade'],['p','seat','Mapa com lugares para mobilidade reduzida, cadeirantes e acompanhantes'],['n','org','Banner mistura estreias e próximos lançamentos'],['n','ads','Anúncios na página do filme'],['p','combo','Combos vendidos online'],['n','flow','Sete etapas até a confirmação']]],
+ ['Cineflix',[['p','price','Tabela de preços por dia da semana'],['n','org','Mostra outros filmes depois que o usuário escolheu um'],['n','flow','Venda abre em nova aba']]],
+ ['Kinoplex',[['n','flow','Venda redirecionada a site secundário, com quatro telas'],['n','org','Nenhum ponto positivo registrado pelo grupo']]],
+ ['Cinépolis',[['n','ads','Anúncio de comida ocupa o banner principal'],['p','org','Todos os filmes disponíveis direto na tela inicial'],['n','flow','Mostra sessões de uma cidade aleatória'],['p','seat','Assentos preferenciais e de acessibilidade em destaque'],['n','flow','Compra segue em outra janela']]],
+ ['Arcoplex',[['p','flow','Pede o cinema antes de mostrar sessões'],['p','ads','Banner sem propaganda'],['n','flow','Só vende para hoje e os dois dias seguintes'],['n','seat','Não permite escolher assento']]],
+ ['Multicine',[['n','ads','Propagandas flutuantes sem relação com cinema'],['n','org','Menu superior desnecessário'],['p','flow','Escolha de sessão autoexplicativa'],['n','seat','Não permite escolher assento']]]
+];
+var curTheme=null;
+var tEl=$('#themes');
+Object.keys(THEMES).forEach(function(k){var b=document.createElement('button');b.type='button';b.className='chip';b.dataset.k=k;b.setAttribute('aria-pressed','false');b.textContent=THEMES[k][0];tEl.appendChild(b)});
+function renderSites(){
+  var h='';
+  SITES.forEach(function(s){
+    h+='<article class="site"><h3>'+s[0]+'</h3>';
+    s[1].forEach(function(f){h+='<div class="f '+f[0]+(curTheme===f[1]?' hit':'')+'"><i>'+(f[0]==='p'?'+':'−')+'</i><span>'+f[2]+'</span></div>'});
+    h+='</article>';
+  });
+  var el=$('#sites');el.innerHTML=h;el.classList.toggle('filtering',!!curTheme);
+  var n=0;SITES.forEach(function(s){s[1].forEach(function(f){if(f[1]===curTheme)n++})});
+  $('#decision').innerHTML=curTheme?'<span class="eyebrow">Decisão de produto · '+THEMES[curTheme][0]+' · '+n+' achados</span><p style="margin-top:4px">'+THEMES[curTheme][1]+'</p>':'<span class="eyebrow">Decisão de produto</span><p style="margin-top:4px;color:var(--muted)">Escolha um tema acima para destacar os achados e ver a decisão que saiu deles.</p>';
+}
+tEl.addEventListener('click',function(e){var b=e.target.closest('.chip');if(!b)return;curTheme=curTheme===b.dataset.k?null:b.dataset.k;$$('.chip',tEl).forEach(function(c){c.setAttribute('aria-pressed',String(c.dataset.k===curTheme))});renderSites()});
+renderSites();
+
+/* pessoas */
+var PEOPLE=[
+ ['Maria','27 anos · universitária','Pesquisar e comprar ingressos em horários que cabem na agenda. Gosta de ir com amigos, mas vai sozinha se precisar.','Interface simples para comprar rápido; encontrar horários, reservar bons assentos, sem atrito.','Busca por horário na primeira tela, escolha de poltrona e combo no mesmo fluxo, compra antecipada.'],
+ ['João','35 anos · administrador do site','Manter filmes e horários corretos, garantir compra segura e aumentar vendas online. Tem conhecimento técnico, de marketing e de vendas.','Informação precisa, interface simples, pacotes de lanche para famílias.','Papel de desenvolvedor com publicar, ocultar, excluir e alterar filmes, planos e produtos, e teste de carga na sala cheia.'],
+ ['Ana','45 anos · divorciada','Procurar filmes para ver sozinha e comprar em horário conveniente. Quer variedade, conforto e economia.','Promoções e descontos visíveis, filmes variados, assentos confortáveis e acessíveis.','Preço e promoção antes da escolha da sessão, e o Plano Família como caminho de economia.'],
+ ['Pedro','65 anos · aposentado','Comprar com antecedência para evitar fila. Quer legenda, bom espaço para as pernas e ambiente climatizado.','Filmes com legenda, assentos confortáveis, compra antecipada sem problemas.','Dublado ou legendado em destaque e obrigatório, escolha de poltrona e compra antecipada.'],
+ ['Marcos','45 anos · deficiência visual','Achar filmes com audiodescrição e legendas descritivas, e saber se o cinema é acessível.','Informação clara sobre acessibilidade, experiência inclusiva e econômica.','Acessibilidade como requisito: filtro de audiodescrição, assentos adaptados e compatibilidade com leitor de tela.'],
+ ['José','50 anos · anti-persona','Compra na bilheteria, sem internet nem cartão. Prefere escolher o lugar na hora.','Achar a bilheteria mais próxima, evitar taxas, ingresso autêntico.','Fora do escopo do canal online. A bilheteria continua existindo; não otimizamos a interface para ele.'],
+ ['Valentina','12 anos · anti-persona','Escolher um filme nas férias, sozinha em casa. Sem conta, entra como visitante e usa dados dos pais para comprar.','Ver filmes apropriados para a idade.','Aviso de classificação, compra só para maiores de 18 com cadastro e aviso de que a entrada física será barrada.']
+];
+var pSel=0;
+function renderPeople(){
+  $('#plist').innerHTML=PEOPLE.map(function(p,i){return '<button type="button" role="tab" class="'+(i>4?'anti':'')+'" aria-selected="'+(i===pSel)+'" data-i="'+i+'"><b>'+p[0]+'</b><small>'+p[1]+'</small></button>'}).join('');
+  var p=PEOPLE[pSel];
+  $('#pdetail').innerHTML='<div><span class="eyebrow">'+p[1]+'</span><h3 style="font-size:1.6rem;font-family:var(--f-display);text-transform:uppercase;font-weight:800;margin-top:2px">'+p[0]+'</h3></div><dl><div><dt>Tarefa principal</dt><dd>'+p[2]+'</dd></div><div><dt>Espera</dt><dd>'+p[3]+'</dd></div></dl><div class="resp"><b>Resposta de produto.</b> '+p[4]+'</div>';
+}
+$('#plist').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;pSel=+b.dataset.i;renderPeople()});
+renderPeople();
+
+/* protótipo */
+var FILMS=[['Super Mario Bros. O Filme','L',0],['Shazam! Fúria dos Deuses','12',12],['John Wick 4: Baba Yaga','16',16],['Pânico VI','18',18]];
+var TIMES=['14:30','17:40','20:50'];
+var BUSY={'B3':1,'B4':1,'C5':1,'C6':1,'D2':1,'D7':1,'E4':1,'E5':1,'E8':1,'F1':1,'F2':1};
+var PCD={'A1':1,'A2':1,'A9':1,'A10':1};
+var S={step:0,film:-1,time:-1,audio:'',inteira:1,meia:0,seats:[],combo:0,copo:false,plan:false,paid:false,code:''};
+var STEPS=['Sessão','Assentos','Lanche','Pagamento'];
+var COMBOS=[['Sem lanche',0],['Combo pipoca + refri',34],['Combo família (2 pipocas + 4 refris)',68]];
+function qty(){return S.inteira+S.meia}
+function ageNow(){return +$('#age').value}
+function price(){var base=S.plan?22.4:32;return S.inteira*base+S.meia*base/2}
+function total(){var c=COMBOS[S.combo][1]*(S.plan?0.8:1);var cup=S.copo?(S.plan?0:25):0;return price()+c+cup}
+function canNext(){
+  if(S.step===0)return S.film>=0&&S.time>=0&&!!S.audio&&qty()>0;
+  if(S.step===1)return S.seats.length===qty();
+  return true;
+}
+function renderProto(){
+  $('#pSteps').innerHTML=STEPS.map(function(_,i){return '<span class="'+(i<=S.step?'on':'')+'"></span>'}).join('');
+  $('#pStepLbl').textContent=(S.step+1)+'/4 · '+STEPS[S.step];
+  var h='';
+  if(S.step===0){
+    h+='<div><h3>Filme</h3><div class="films" style="margin-top:8px">'+FILMS.map(function(f,i){return '<button type="button" class="film" data-film="'+i+'" aria-pressed="'+(S.film===i)+'"><span>'+f[0]+'</span><span class="rate r-'+f[1]+'">'+f[1]+'</span></button>'}).join('')+'</div></div>';
+    h+='<div><h3>Horário</h3><div class="seg" style="margin-top:8px">'+TIMES.map(function(t,i){return '<button type="button" class="chip" data-time="'+i+'" aria-pressed="'+(S.time===i)+'">'+t+'</button>'}).join('')+'</div></div>';
+    h+='<div><h3>Áudio <span class="note">(obrigatório)</span></h3><div class="seg" style="margin-top:8px"><button type="button" class="chip" data-audio="DUB" aria-pressed="'+(S.audio==='DUB')+'">Dublado</button><button type="button" class="chip" data-audio="LEG" aria-pressed="'+(S.audio==='LEG')+'">Legendado</button></div></div>';
+    h+='<div><h3>Ingressos <span class="note">(inteira ou meia)</span></h3><div style="display:grid;gap:6px;margin-top:8px">'+
+      ['inteira','meia'].map(function(k){return '<div class="qty"><span>'+(k==='inteira'?'Inteira':'Meia-entrada')+'</span><span class="ctr"><button type="button" data-q="'+k+'" data-d="-1" aria-label="Menos">−</button><b class="mono">'+S[k]+'</b><button type="button" data-q="'+k+'" data-d="1" aria-label="Mais">+</button></span></div>'}).join('')+'</div></div>';
+    if(S.film>=0&&ageNow()<FILMS[S.film][2])h+='<div class="warn bad">Classificação '+FILMS[S.film][1]+'. Com '+ageNow()+' anos a entrada será barrada na sessão.</div>';
+  }
+  if(S.step===1){
+    var rows='ABCDEF'.split('').reverse();
+    h+='<div><h3>Escolha '+qty()+' poltrona'+(qty()>1?'s':'')+'</h3><p class="note">'+S.seats.length+' de '+qty()+' selecionada'+(S.seats.length===1?'':'s')+'</p></div>';
+    h+='<div class="seats">';
+    rows.forEach(function(r){h+='<div class="srow"><span class="lbl">'+r+'</span>';for(var n=1;n<=10;n++){var id=r+n,cls='seat'+(BUSY[id]?' busy':'')+(PCD[id]?' pcd':'')+(S.seats.indexOf(id)>-1?' sel':'');h+='<button type="button" class="'+cls+'" data-seat="'+id+'" '+(BUSY[id]?'disabled':'')+' aria-label="Poltrona '+id+(PCD[id]?', acessível':'')+'">'+(PCD[id]?'♿':n)+'</button>';if(n===5)h+='<span style="width:10px"></span>'}h+='</div>'});
+    h+='</div><div class="screen"></div><p class="note" style="text-align:center">tela</p>';
+    h+='<div class="legend"><span><i></i>livre</span><span><i style="background:var(--accent);border-color:var(--accent)"></i>sua escolha</span><span><i style="background:var(--line)"></i>ocupada</span><span><i style="border-color:#3a7bd5"></i>acessível</span></div>';
+  }
+  if(S.step===2){
+    h+='<div><h3>Lanche <span class="note">(opcional)</span></h3><div class="films" style="margin-top:8px">'+COMBOS.map(function(c,i){return '<button type="button" class="film" data-combo="'+i+'" aria-pressed="'+(S.combo===i)+'"><span>'+c[0]+'</span><span class="mono">'+(c[1]?brl(c[1]):'–')+'</span></button>'}).join('')+'</div></div>';
+    h+='<div class="qty"><span>Copo personalizado com refil<br><span class="note">'+brl(25)+' uma vez, depois só o refil</span></span><button type="button" class="chip" data-copo="1" aria-pressed="'+S.copo+'">'+(S.copo?'Adicionado':'Adicionar')+'</button></div>';
+  }
+  if(S.step===3){
+    if(S.paid){
+      h+='<div class="stub"><span class="eyebrow">Compra confirmada</span><b>'+FILMS[S.film][0]+'</b><span class="note">'+TIMES[S.time]+' · '+(S.audio==='DUB'?'Dublado':'Legendado')+' · Poltronas '+S.seats.join(', ')+'</span><span class="code">'+S.code+'</span><span class="note">Apresente este código na entrada</span></div>';
+    }else{
+      h+='<div class="sum"><div><span>'+S.inteira+' inteira'+(S.meia?' + '+S.meia+' meia':'')+'</span><span>'+brl(price())+'</span></div><div><span>'+COMBOS[S.combo][0]+'</span><span>'+brl(COMBOS[S.combo][1]*(S.plan?0.8:1))+'</span></div>'+(S.copo?'<div><span>Copo com refil</span><span>'+(S.plan?'incluso':brl(25))+'</span></div>':'')+'<div class="tot"><span>Total</span><span>'+brl(total())+'</span></div></div>';
+      h+='<div class="qty"><span>Sou assinante do Plano Família<br><span class="note">exemplo: 30% nos ingressos, 20% no combo, copo incluso</span></span><button type="button" class="chip" data-plan="1" aria-pressed="'+S.plan+'">'+(S.plan?'Sim':'Não')+'</button></div>';
+      if(ageNow()<18)h+='<div class="warn bad">Compra disponível só para maiores de 18 anos com cadastro. Peça para um responsável comprar. Pagamento bloqueado.</div>';
+      else h+='<div class="warn ok">Cadastro confirmado. Pronto para pagar.</div>';
+    }
+  }
+  $('#pBody').innerHTML=h;
+  $('#pBack').disabled=S.step===0||S.paid;
+  var nx=$('#pNext');
+  nx.textContent=S.step===3?(S.paid?'Nova compra':'Pagar '+brl(total())):'Continuar';
+  nx.disabled=S.step===3&&!S.paid?ageNow()<18:!canNext();
+  renderChecks();
+}
+function renderChecks(){
+  var items=[
+   [true,'Compra inteira em uma página, sem sair do site'],
+   [!!S.audio,'Dublado ou legendado escolhido antes de seguir'],
+   [qty()>0,'Inteira ou meia escolhida antes de seguir'],
+   [S.seats.length>0,'Poltrona escolhida pelo cliente, com assentos acessíveis em destaque'],
+   [S.combo>0||S.copo,'Combo e copo com refil na mesma compra'],
+   [S.plan,'Plano Família aplicado ao total'],
+   [ageNow()<18&&S.step===3,'Menor de 18 bloqueado no pagamento']
+  ];
+  $('#checks').innerHTML=items.map(function(i){return '<li class="'+(i[0]?'ok':'')+'"><i>'+(i[0]?'✓':'○')+'</i><span>'+i[1]+'</span></li>'}).join('');
+}
+$('#pBody').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;var d=b.dataset;
+  if(d.film!==undefined)S.film=+d.film;
+  else if(d.time!==undefined)S.time=+d.time;
+  else if(d.audio)S.audio=d.audio;
+  else if(d.q){S[d.q]=Math.max(0,Math.min(6,S[d.q]+ +d.d));S.seats=[]}
+  else if(d.seat){var i=S.seats.indexOf(d.seat);if(i>-1)S.seats.splice(i,1);else if(S.seats.length<qty())S.seats.push(d.seat)}
+  else if(d.combo!==undefined)S.combo=+d.combo;
+  else if(d.copo)S.copo=!S.copo;
+  else if(d.plan)S.plan=!S.plan;
+  renderProto();
+});
+$('#pNext').addEventListener('click',function(){
+  if(S.step===3){
+    if(S.paid){S={step:0,film:-1,time:-1,audio:'',inteira:1,meia:0,seats:[],combo:0,copo:false,plan:false,paid:false,code:''}}
+    else{S.paid=true;S.code='TM-'+Math.random().toString(36).slice(2,6).toUpperCase()+'-'+Math.floor(1000+Math.random()*9000)}
+  }else S.step++;
+  renderProto();
+});
+$('#pBack').addEventListener('click',function(){if(S.step>0)S.step--;renderProto()});
+$('#age').addEventListener('change',renderProto);
+renderProto();
+
+/* teste de concorrência */
+var BUY=['Computador 1','Computador 2','Computador 3','Computador 4'];
+function drawRace(res){
+  $('#buyers').innerHTML=BUY.map(function(b,i){var r=res&&res[i];return '<div class="buyer '+(r?r.cls:'')+'"><b>'+b+'</b><span class="st">'+(r?r.msg:'aguardando')+'</span></div>'}).join('');
+  var w=res&&res.some(function(r){return r.cls==='win'});
+  $('#room').innerHTML=Array(12).fill('<span class="'+(w?'taken':'')+'"></span>').join('');
+}
+drawRace(null);
+var running=false;
+$('#runRace').addEventListener('click',function(){
+  if(running)return;running=true;
+  var order=[0,1,2,3].sort(function(){return Math.random()-.5});
+  var res=[null,null,null,null],k=0;$('#raceOut').textContent='';
+  drawRace(res);
+  (function step(){
+    if(k>=4){running=false;$('#raceOut').textContent='Resultado: 1 compra confirmada, 3 recusadas. Nenhum assento vendido duas vezes.';return}
+    var i=order[k];
+    res[i]=k===0?{cls:'win',msg:'12 assentos confirmados'}:{cls:'lose',msg:'recusado: sem assentos disponíveis'};
+    drawRace(res);k++;setTimeout(step,650);
+  })();
+});
+
+/* papéis */
+var ROLES={
+ 'Cliente':[['Consulta filmes em cartaz'],['Escolhe a opção de Planos ou ingresso individual'],['Seleciona e compra produtos disponíveis']],
+ 'Desenvolvedor':[['Cadastrar filmes no site<br>Publicar/ocultar filmes<br>Excluir filmes<br>Alterar filmes'],['Cadastrar planos<br>Publicar/ocultar planos<br>Excluir planos<br>Alterar planos'],['Cadastrar produtos<br>Publicar/ocultar produtos<br>Excluir produtos<br>Alterar produtos']]
+};
+function renderRole(r){$('#roleBody').innerHTML='<tr>'+ROLES[r].map(function(c){return '<td>'+c[0]+'</td>'}).join('')+'</tr>'}
+renderRole('Cliente');
+$$('[data-role]').forEach(function(b){b.addEventListener('click',function(){$$('[data-role]').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))});renderRole(b.dataset.role)})});
+
+/* produção */
+var PIPE=[
+ ['Especificar','done','Pesquisa de sete sites, cinco personas, duas anti-personas, cenários e tabela de objetivos por papel.','Transformo achados em requisitos com critério de aceitação. Cada tema da pesquisa vira uma decisão testável.','Um agente de IA resume entrevistas e avaliações de usuários e aponta requisitos que se contradizem.','Requisito sem cenário de teste não entra.'],
+ ['Construir','done','Protótipo em papel feito pelo grupo e versão clicável deste case.','Defino a arquitetura mínima: catálogo, sessões, reserva de assentos, pagamento e planos.','Assistente de código gera o esqueleto e as telas; eu reviso e escrevo as regras de negócio à mão.','Todo código gerado passa por revisão e por teste antes de ir adiante.'],
+ ['Testar','plan','Cenários de João (sala cheia, assento vendido uma vez) e Valentina (menor de idade) escritos e simulados.','Converto cada cenário em teste automatizado de ponta a ponta e em teste de carga na reserva de assentos.','Avaliações automáticas conferem se o agente recomenda sessão e combo dentro das regras, inclusive de classificação etária.','Sem os testes dos cenários passando, não há deploy.'],
+ ['Publicar','plan','Ainda não executado.','Entrega em ambiente de homologação, depois liberação gradual para uma parcela dos usuários, com reversão rápida.','IA ajuda a escrever notas de versão e o plano de reversão; a decisão de liberar é minha e do time.','Taxa de erro e tempo de resposta dentro do limite combinado.'],
+ ['Medir','plan','Ainda não executado.','Defino de antemão as métricas: conversão da compra, etapas até o pagamento, uso do Plano Família, uso de recursos de acessibilidade.','Agente monitora os números e levanta anomalias com contexto, sem agir sozinho.','Cada métrica tem um dono e um valor que dispara revisão.'],
+ ['Evoluir','plan','Plano Família e refil de copo como hipóteses para validar.','Priorizo a partir dos dados: o que reduziu etapas, o que gerou receita, o que ficou sem uso.','Um agente que recomenda sessão, assento e combo conforme o perfil, no lugar de uma lista longa de opções.','Todo agente novo nasce com limites, registro de decisões e forma de desligar.']
+];
+var pi=0;
+function renderPipe(){
+  $('#pipe').innerHTML=PIPE.map(function(p,i){return '<button type="button" role="tab" aria-selected="'+(i===pi)+'" data-i="'+i+'"><span class="n">'+(i+1)+'/6</span><b>'+p[0]+'</b><span class="dot '+p[1]+'"></span></button>'}).join('');
+  var p=PIPE[pi];
+  $('#stage').innerHTML='<div class="card"><h3>No projeto</h3><p>'+p[2]+'</p><p style="margin-top:10px"><span class="tag '+p[1]+'">'+(p[1]==='done'?'existe':'plano')+'</span></p></div><div class="card"><h3>O que eu faço</h3><p>'+p[3]+'</p></div><div class="card"><h3>Onde a IA entra</h3><p>'+p[4]+'</p><p class="note" style="margin-top:10px"><b>Portão:</b> '+p[5]+'</p></div>';
+}
+$('#pipe').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;pi=+b.dataset.i;renderPipe()});
+renderPipe();
+})();
+</script>
+
+</body>
+</html>
